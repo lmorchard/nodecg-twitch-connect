@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      a {
+        color: #dddddd;
+      }
+      a:visited {
+        color: #cccccc;
+      }
+      .monospace {
+        font-family: monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <dl id="tokens"></dl>
+    <p>
+      <a id="reauth-link" href="/twitch-auth" target="_blank"
+        >Manually renew auth tokens</a
+      >
+    </p>
+
+    <script type="module">
+			const $$ = (...args) => document.getElementById(...args);
+
+			const reauthHref = `/${nodecg.bundleName}/auth/`;
+			$$('reauth-link').setAttribute('href', reauthHref);
+
+      const tokens = {};
+      const tokenTypes = ['app', 'user', 'chatbot'];
+
+      const renderTokens = () => {
+        $$('tokens').innerHTML = `
+        ${Object.entries(tokens)
+          .filter(([, token]) => token.value)
+          .map(
+            ([type, token]) => `
+              <dt>${type}</dt>
+              <dd>${token.value.expires_at}<dd>
+              `
+          )
+          .join('')}
+        `;
+      };
+
+      for (const tokenType of tokenTypes) {
+        tokens[tokenType] = nodecg.Replicant(`twitch-token-${tokenType}`);
+        tokens[tokenType].on('change', renderTokens);
+      }
+    </script>
+
+    <script type="module">
+      import(
+        '/bundles/file-watcher/public/file-watcher.mjs'
+      ).then(({ default: reload }) => reload(nodecg));
+    </script>
+  </body>
+</html>

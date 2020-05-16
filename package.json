@@ -1,0 +1,64 @@
+{
+  "name": "twitch-connect",
+  "version": "0.0.0",
+  "description": "",
+  "homepage": "https://github.com/lmorchard/nodecg-twitch-connect",
+  "author": {
+    "name": "Les Orchard",
+    "email": "me@lmorchard.com",
+    "url": "https://lmorchard.com"
+  },
+  "files": [
+    "dashboard",
+    "graphics",
+    "extension.js",
+    "extension"
+  ],
+  "keywords": [
+    "",
+    "nodecg-bundle"
+  ],
+  "prettier": {
+    "singleQuote": true,
+    "trailingComma": "es5"
+  },
+  "nodecg": {
+    "compatibleRange": "^1.1.1",
+    "dashboardPanels": [
+      {
+        "name": "twitch-auth",
+        "title": "Twitch Auth",
+        "width": 2,
+        "file": "twitch-auth.html",
+        "headerColor": "#525F78"
+      },
+      {
+        "name": "twitch-chatbot",
+        "title": "Twitch Chatbot",
+        "width": 2,
+        "file": "twitch-chatbot.html",
+        "headerColor": "#525F78"
+      }
+    ],
+    "graphics": [
+      {
+        "file": "index.html",
+        "width": 1280,
+        "height": 720
+      }
+    ]
+  },
+  "repository": "https://github.com/lmorchard/nodecg-twitch-connect.git",
+  "license": "MIT",
+  "dependencies": {
+    "@d-fischer/shared-utils": "^2.0.0",
+    "twitch": "^4.0.9",
+    "twitch-chat-client": "^4.0.9",
+    "twitch-pubsub-client": "^4.0.9",
+    "twitch-webhooks": "^4.0.9"
+  },
+  "devDependencies": {
+    "prettier": "^2.0.5",
+    "snowpack": "^1.7.1"
+  }
+}
