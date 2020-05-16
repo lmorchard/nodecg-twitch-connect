@@ -18,18 +18,23 @@ module.exports = async function (nodecg) {
   });
   await chat.connect();
 
-  nodecg.listenFor('twitch.chat.say', (channel, message) => {
-    chat.say(channel, message);
+  nodecg.listenFor('twitch.chat.say', ({ message }) => {
+    chat.say(ownerUserName, message);
   });
 
   chat.onPrivmsg((channel, user, message, meta) => {
+    const self = meta.userInfo.userId === userId;
     nodecg.sendMessage('twitch.chat.message', {
       channel,
       user,
       message,
       meta,
-      self: meta.userInfo.userId === userId,
+      self,
     });
+    if (!self && message.startsWith('!')) {
+      const [command, ...commandArgs] = message.substring(1).split(' ');
+      nodecg.sendMessage('twitch.chat.command', { command, commandArgs });
+    }
   });
 
   chat.onRaid((channel, user, raidInfo, msg) => {
