@@ -1,28 +1,25 @@
-const ChatClient = require('twitch-chat-client').default;
-const LogLevel = require('@d-fischer/logger/lib/LogLevel').default;
-
-const node = require('json-schema-lib');
-const { createTokenReplicants, createTwitchUserClient } = require('./common');
+const { ChatClient } = require('@twurple/chat');
+const { createTokenReplicants, createTwitchClient } = require('./common');
 
 module.exports = async function (nodecg) {
   const tokens = await createTokenReplicants(nodecg);
 
-  const twitchOwnerClient = await createTwitchUserClient(nodecg, tokens.user);
+  const twitchOwnerClient = await createTwitchClient(nodecg, tokens.user);
   const { userName: ownerUserName } = await twitchOwnerClient.getTokenInfo();
 
-  const twitchChatClient = await createTwitchUserClient(nodecg, tokens.chatbot);
+  const twitchChatClient = await createTwitchClient(nodecg, tokens.chatbot);
   const { userId, userName } = await twitchChatClient.getTokenInfo();
-  
-  const chat = await ChatClient.forTwitchClient(twitchChatClient, {
+
+  const chat = new ChatClient({
+    authProvider: twitchChatClient._authProvider,
     channels: [ownerUserName],
     requestMembershipEvents: true,
-    logLevel: LogLevel.DEBUG,
+    logger: { minLevel: nodecg.config.logging.console.level }
   });
+
   nodecg.log.debug(`Chatbot connecting as ${userName} in channel ${ownerUserName}`);
   await chat.connect();
   nodecg.log.info(`Chatbot connected as ${userName} in channel ${ownerUserName}`);
-
-  chat.say(ownerUserName, "Chatbot reporting for duty 👋");
 
   nodecg.listenFor('twitch.chat.say', ({ message }) => {
     chat.say(ownerUserName, message);
@@ -33,7 +30,7 @@ module.exports = async function (nodecg) {
     if (manually) return;
     chat.connect();
   })
-  
+
   chat.onPrivmsg((channel, user, message, meta) => {
     const self = meta.userInfo.userId === userId;
     nodecg.sendMessage('twitch.chat.message', {
@@ -58,9 +55,12 @@ module.exports = async function (nodecg) {
     nodecg.sendMessage('twitch.hosted', { channel, byChannel, auto, viewers })
   );
 
-  chat.onJoin((channel, user) =>
+  chat.onJoin((channel, user) => {
+    if (user === userName) {
+      chat.say(ownerUserName, `Chatbot reporting for duty at ${Date.now()} 👋`);
+    }
     nodecg.sendMessage('twitch.join', { channel, user })
-  );
+  });
 
   chat.onPart((channel, user) =>
     nodecg.sendMessage('twitch.part', { channel, user })

@@ -1,6 +1,10 @@
 const NodeCG = require('../../../lib/api');
 const TwitchClient = require('twitch').default;
+
 const LogLevel = require('@d-fischer/logger/lib/LogLevel').default;
+
+const { ApiClient } = require("@twurple/api");
+const { RefreshingAuthProvider } = require("@twurple/auth");
 
 const tokenTypes = ['app', 'user', 'chatbot'];
 
@@ -46,12 +50,15 @@ const htmlPage = (...args) => {
   return html`
     <!DOCTYPE html>
     <html>
-      <head>
-        ${head}
-      </head>
-      <body>
-        ${body}
-      </body>
+    
+    <head>
+      ${head}
+    </head>
+    
+    <body>
+      ${body}
+    </body>
+    
     </html>
   `;
 };
@@ -92,6 +99,39 @@ async function createTwitchUserClient(nodecg, token) {
   );
 }
 
+async function createAuthProvider(nodecg, token) {
+  const { clientId, clientSecret } = nodecg.bundleConfig;
+  const tokenData = token.value;
+  const { access_token: accessToken, refresh_token: refreshToken } = tokenData;
+  return new RefreshingAuthProvider(
+    {
+      clientId,
+      clientSecret,
+      onRefresh: (newToken) => {
+        token.value = {
+          ...tokenData,
+          access_token: newToken.accessToken,
+          refresh_token: newToken.refreshToken,
+          expires_in: newToken.expiresIn,
+          obtainment_timestamp: newToken.obtainmentTimestamp,
+        };
+      },
+    },
+    {
+      accessToken,
+      refreshToken,
+    }
+  );
+}
+
+async function createTwitchClient(nodecg, token) {
+  const authProvider = await createAuthProvider(nodecg, token);
+  return new ApiClient({
+    authProvider,
+    logger: { minLevel: nodecg.config.logging.console.level }
+  });
+}
+
 module.exports = {
   TWITCH_SCOPES,
   tokenTypes,
@@ -99,4 +139,6 @@ module.exports = {
   htmlPage,
   createTokenReplicants,
   createTwitchUserClient,
+  createAuthProvider,
+  createTwitchClient,
 };

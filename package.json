@@ -52,10 +52,12 @@
   "license": "MIT",
   "dependencies": {
     "@d-fischer/shared-utils": "^2.0.0",
+    "@twurple/api": "^5.2.2",
+    "@twurple/auth": "^5.2.2",
+    "@twurple/chat": "^5.2.2",
+    "@twurple/eventsub": "^5.2.2",
     "twitch": "^4.0.9",
-    "twitch-chat-client": "^4.0.9",
-    "twitch-pubsub-client": "^4.0.9",
-    "twitch-webhooks": "^4.0.9"
+    "twitch-pubsub-client": "^4.0.9"
   },
   "devDependencies": {
     "prettier": "^2.0.5",
