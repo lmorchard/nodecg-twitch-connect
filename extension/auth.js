@@ -1,5 +1,5 @@
 const fetch = require('node-fetch');
-const { html, createTokenReplicants } = require('./common');
+const { TWITCH_SCOPES, html, htmlPage, createTokenReplicants } = require('./common');
 
 module.exports = async function (nodecg) {
   const { host, port } = nodecg.config;
@@ -74,7 +74,7 @@ module.exports = async function (nodecg) {
       </section>
 
       <section>
-        <h2>User Access Token</h2>
+        <h2>User / Owner Access Token</h2>
         <p>Expires in: ${user.value.expires_in}</p>
         <a href="${authorizeUserUrl()}">Authorize user</a>
       </section>

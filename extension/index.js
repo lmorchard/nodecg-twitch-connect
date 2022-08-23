@@ -4,7 +4,7 @@ module.exports = function (nodecg) {
       require('./auth'),
       require('./chatbot'),
       require('./pubsub'),
-      require('./webhooks'),
+      // DEPRECATED require('./webhooks'),
     ].map((fn) => fn(nodecg))
   )
     .then(() => nodecg.log.debug(`${nodecg.bundleName} started up`))
