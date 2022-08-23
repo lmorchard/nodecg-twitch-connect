@@ -1,6 +1,7 @@
 const ChatClient = require('twitch-chat-client').default;
 const LogLevel = require('@d-fischer/logger/lib/LogLevel').default;
 
+const node = require('json-schema-lib');
 const { createTokenReplicants, createTwitchUserClient } = require('./common');
 
 module.exports = async function (nodecg) {
@@ -11,17 +12,28 @@ module.exports = async function (nodecg) {
 
   const twitchChatClient = await createTwitchUserClient(nodecg, tokens.chatbot);
   const { userId, userName } = await twitchChatClient.getTokenInfo();
+  
   const chat = await ChatClient.forTwitchClient(twitchChatClient, {
     channels: [ownerUserName],
     requestMembershipEvents: true,
     logLevel: LogLevel.DEBUG,
   });
+  nodecg.log.debug(`Chatbot connecting as ${userName} in channel ${ownerUserName}`);
   await chat.connect();
+  nodecg.log.info(`Chatbot connected as ${userName} in channel ${ownerUserName}`);
+
+  chat.say(ownerUserName, "Chatbot reporting for duty 👋");
 
   nodecg.listenFor('twitch.chat.say', ({ message }) => {
     chat.say(ownerUserName, message);
   });
 
+  chat.onDisconnect((manually, reason) => {
+    nodecg.log.warn(`Chatbot disconnected because ${reason}`);
+    if (manually) return;
+    chat.connect();
+  })
+  
   chat.onPrivmsg((channel, user, message, meta) => {
     const self = meta.userInfo.userId === userId;
     nodecg.sendMessage('twitch.chat.message', {
