@@ -33,7 +33,7 @@ module.exports = async function (nodecg) {
     const messageName = `twitch.eventsub.${name}`;
     // HACK: accessing this raw data seems stinky
     const rawData = data[rawDataSymbol];
-    nodecg.log.debug('eventsub', messageName, rawData);
+    nodecg.log.trace('eventsub', messageName, rawData);
     nodecg.sendMessage(messageName, rawData);
     nodecg.sendMessage(`${messageName}.Event`, data);
   };
