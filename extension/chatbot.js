@@ -31,7 +31,7 @@ module.exports = async function (nodecg) {
 
   const sendMessage = (name, data = {}) => {
     const messageName = `twitch.chat.${name}`;
-    nodecg.log.trace(messageName, data);
+    nodecg.log.debug(messageName, data);
     nodecg.sendMessage(messageName, data);
   };
 
@@ -42,6 +42,7 @@ module.exports = async function (nodecg) {
     chat.connect();
   });
 
+  // TODO: switch over to using onMessage
   chat.onPrivmsg((channel, user, message, meta) => {
     const self = meta.userInfo.userId === userId;
     nodecg.sendMessage('twitch.chat.message', {
@@ -63,6 +64,15 @@ module.exports = async function (nodecg) {
     }
     sendMessage('Join', { channel, user });
   });
+
+  const indexParams = (paramNames, params, baseData = {}) =>
+    paramNames.reduce(
+      (acc, name, idx) => ({
+        ...acc,
+        [name]: params[idx],
+      }),
+      { ...baseData /*, params */ }
+    );
 
   [
     ['Action', ['message', 'msg']],
@@ -86,16 +96,9 @@ module.exports = async function (nodecg) {
     ['SubGift', ['subInfo', 'msg']],
     ['Timeout', ['duration', 'msg']],
   ].forEach(([name, paramNames = []]) => {
-    chat[`on${name}`]((channel, user, ...params) => {
-      const data = paramNames.reduce(
-        (acc, name, idx) => ({
-          ...acc,
-          [name]: params[idx],
-        }),
-        { channel, user }
-      );
-      sendMessage(name, { ...data, params });
-    });
+    chat[`on${name}`]((channel, user, ...params) =>
+      sendMessage(name, indexParams(paramNames, params, { channel, user }))
+    );
   });
 
   [
@@ -127,15 +130,8 @@ module.exports = async function (nodecg) {
     ['Unhost', ['channel']],
     ['Whisper', ['user', 'message', 'msg']],
   ].forEach(([name, paramNames = []]) => {
-    chat[`on${name}`]((...params) => {
-      const data = paramNames.reduce(
-        (acc, name, idx) => ({
-          ...acc,
-          [name]: params[idx],
-        }),
-        {}
-      );
-      sendMessage(name, { ...data, params });
-    });
+    chat[`on${name}`]((...params) =>
+      sendMessage(name, indexParams(paramNames, params))
+    );
   });
 };
