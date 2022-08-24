@@ -1,7 +1,4 @@
 const NodeCG = require('../../../lib/api');
-const TwitchClient = require('twitch').default;
-
-const LogLevel = require('@d-fischer/logger/lib/LogLevel').default;
 
 const { ApiClient } = require("@twurple/api");
 const { RefreshingAuthProvider } = require("@twurple/auth");
@@ -74,31 +71,6 @@ async function createTokenReplicants(nodecg) {
   return tokens;
 }
 
-async function createTwitchUserClient(nodecg, token) {
-  const { clientId, clientSecret } = nodecg.bundleConfig;
-  const tokenData = token.value;
-  const { access_token: accessToken, refresh_token: refreshToken } = tokenData;
-  return TwitchClient.withCredentials(
-    clientId,
-    accessToken,
-    undefined,
-    {
-      clientSecret,
-      refreshToken,
-      onRefresh: (newToken) => {
-        token.value = {
-          ...tokenData,
-          access_token: newToken.accessToken,
-          refresh_token: newToken.refreshToken,
-        };
-      },
-    },
-    {
-      logLevel: LogLevel.TRACE,
-    }
-  );
-}
-
 async function createAuthProvider(nodecg, token) {
   const { clientId, clientSecret } = nodecg.bundleConfig;
   const tokenData = token.value;
@@ -120,6 +92,7 @@ async function createAuthProvider(nodecg, token) {
     {
       accessToken,
       refreshToken,
+      scope: TWITCH_SCOPES,
     }
   );
 }
@@ -138,7 +111,6 @@ module.exports = {
   html,
   htmlPage,
   createTokenReplicants,
-  createTwitchUserClient,
   createAuthProvider,
   createTwitchClient,
 };

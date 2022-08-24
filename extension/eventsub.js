@@ -1,36 +1,43 @@
-const { ClientCredentialsAuthProvider } = require("@twurple/auth");
-const { DirectConnectionAdapter, EventSubListener, ReverseProxyAdapter } = require('@twurple/eventsub');
-const { createTokenReplicants, createAuthProvider, createTwitchClient } = require('./common');
-const { ApiClient } = require("@twurple/api");
+const { ClientCredentialsAuthProvider } = require('@twurple/auth');
+const { EventSubListener, ReverseProxyAdapter } = require('@twurple/eventsub');
+const { createTokenReplicants, createTwitchClient } = require('./common');
+const { ApiClient } = require('@twurple/api');
 
 module.exports = async function (nodecg) {
+  const { clientId, clientSecret } = nodecg.bundleConfig;
+  const { hostName, port, secret, pathPrefix } =
+    nodecg.bundleConfig.eventsub || {};
+
   const tokens = await createTokenReplicants(nodecg);
 
   const twitchOwnerClient = await createTwitchClient(nodecg, tokens.user);
-  const { userName, userId } = await twitchOwnerClient.getTokenInfo();
+  const { userId: ownerUserId } = await twitchOwnerClient.getTokenInfo();
 
-  const { clientId, clientSecret } = nodecg.bundleConfig;
-  const authProvider = new ClientCredentialsAuthProvider(clientId, clientSecret);
   const apiClient = new ApiClient({
-    authProvider,
-    logger: { minLevel: nodecg.config.logging.console.level }
+    authProvider: new ClientCredentialsAuthProvider(clientId, clientSecret),
+    logger: { minLevel: nodecg.config.logging.console.level },
   });
-
+  // TODO: make this configurable with DirectConnectionAdapter so I can port-forward with a local SSL cert?
+  const adapter = new ReverseProxyAdapter({ port, hostName, pathPrefix });
   const listener = new EventSubListener({
     apiClient,
-    adapter: new ReverseProxyAdapter({
-      // TODO: get this all from bundle config
-      port: 9978,
-      hostName: "aerostat.lmorchard.com",
-      pathPrefix: "/caffeinabot2/twitch-eventsub/",
-    }),
-    secret: "8675309jenny"
+    secret,
+    adapter,
+    strictHostCheck: true,
   });
 
   await listener.listen();
 
-  const subscription = listener.subscribeToChannelRedemptionAddEventsForReward(userId, "", (data) => {
-    const { broadcasterDisplayName, broadcasterId, broadcasterName, id, input, redeemedAt, rewardCost, rewardId, rewardPrompt, rewardTitle, status, userDisplayName, userId } = data;
-    console.log("REWARD THINGY", JSON.stringify({ broadcasterDisplayName, broadcasterId, broadcasterName, id, input, redeemedAt, rewardCost, rewardId, rewardPrompt, rewardTitle, status, userDisplayName, userId }));
+  listener.subscribeToChannelFollowEvents(ownerUserId, (data) => {
+    nodecg.sendMessage("twitch.following", data);
   });
+
+  listener.subscribeToChannelRedemptionAddEventsForReward(
+    ownerUserId,
+    '',
+    (data) => {
+      // TODO: see also api.channelPoints.updateRedemptionStatusByIds to ack reward
+      nodecg.sendMessage("twitch.reward", data);
+    }
+  );
 };

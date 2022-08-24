@@ -4,7 +4,6 @@ module.exports = function (nodecg) {
       require('./auth'),
       require('./chatbot'),
       require('./eventsub'),
-      require('./pubsub'),
     ].map((fn) => fn(nodecg))
   )
     .then(() => nodecg.log.debug(`${nodecg.bundleName} started up`))
